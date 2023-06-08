@@ -31,9 +31,10 @@ import collections
 def get_args_parser():
     parser = argparse.ArgumentParser('PVT training and evaluation script', add_help=False)
     parser.add_argument('--fp32-resume', action='store_true', default=False)
-    parser.add_argument('--batch-size', default=8, type=int)
+    parser.add_argument('--batch-size', default=64, type=int)
     parser.add_argument('--epochs', default=300, type=int)
     parser.add_argument('--config', required=True, type=str, help='config')
+    parser.add_argument('--savepath', default='' )
 
     # Model parameters
     parser.add_argument('--model', default='pvt_small', type=str, metavar='MODEL',
@@ -348,7 +349,7 @@ def main(args):
 
 
     # LabelSmoothingCrossEntropy的损失函数对象，并将其赋值给criterion变量。这个损失函数通常用于在分类任务中对标签进行平滑化处理。
-    # 自己注释的 感觉不需要这行 criterion = LabelSmoothingCrossEntropy()
+    criterion = LabelSmoothingCrossEntropy()
 
     if args.mixup > 0.:
         # smoothing is handled with mixup label transform
@@ -400,7 +401,9 @@ def main(args):
     )
 
     output_dir = Path(args.output_dir)
-
+    output_dir = Path('/content/drive/MyDrive/PVT')
+    output_dir = Path(args.savepath)
+    print(f'now dir is {output_dir}')
 
     # 模型恢复训练
     if args.resume:
@@ -468,7 +471,8 @@ def main(args):
         # 学习率递减
         lr_scheduler.step(epoch)
 
-        if args.output_dir:
+        #if args.output_dir:
+        if args.savepath:
             checkpoint_paths = [output_dir / 'checkpoint.pth']
             # 保存检查点
             for checkpoint_path in checkpoint_paths:
@@ -495,7 +499,10 @@ def main(args):
                      'epoch': epoch,
                      'n_parameters': n_parameters}
 
-        if args.output_dir and utils.is_main_process():
+        #if args.output_dir and utils.is_main_process():
+        #    with (output_dir / "log.txt").open("a") as f:
+        #       f.write(json.dumps(log_stats) + "\n")
+        if args.savepath and utils.is_main_process():
             with (output_dir / "log.txt").open("a") as f:
                 f.write(json.dumps(log_stats) + "\n")
 
@@ -509,6 +516,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('DeiT training and evaluation script', parents=[get_args_parser()])
     args = parser.parse_args()
     args = utils.update_from_config(args)
-    if args.output_dir:
-        Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+    #if args.output_dir:
+    #    Path('/content/drive/MyDrive/PVT').mkdir(parents=True, exist_ok=True)
+    #    # Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+    if args.savepath:
+        Path(args.savepath).mkdir(parents=True, exist_ok=True)
     main(args)
